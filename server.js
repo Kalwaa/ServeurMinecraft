@@ -49,7 +49,7 @@ app.post('/api/servers/:identifier/power', async (req, res) => {
     res.json({ success: true, message: `Signal '${signal}' envoyé avec succès !` });
   } catch (error) {
     console.error('Erreur API Pterodactyl:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Erreur lors de l'envoi de la commande de puissance' });
+res.status(500).json({ error: 'Erreur lors de l\'envoi de la commande de puissance' });
   }
 });
 
