@@ -2,84 +2,239 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Console & Commandes Pterodactyl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Serveur Minecraft</title>
   <style>
-    body { font-family: monospace; background: #181825; color: #cdd6f4; padding: 20px; }
-    #console {
-      background: #11111b;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #11111b;
+      color: #cdd6f4;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .dashboard-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #cba6f7;
+      margin-bottom: 5px;
+    }
+
+    /* Panneau de contrôle / Statut */
+    .card {
+      background-color: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .server-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      background-color: #45475a;
+      color: #bac2de;
+    }
+
+    .status-online { background-color: #a6e3a1; color: #11111b; }
+    .status-offline { background-color: #f38ba8; color: #11111b; }
+    .status-starting { background-color: #f9e2af; color: #11111b; }
+
+    /* Boutons de puissance */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-start { background-color: #a6e3a1; color: #11111b; }
+    .btn-restart { background-color: #f9e2af; color: #11111b; }
+    .btn-stop { background-color: #f38ba8; color: #11111b; }
+
+    /* Console */
+    .console-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .console-section h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #bac2de;
+    }
+
+    #console-output {
+      background-color: #181825;
+      font-family: 'Courier New', Courier, monospace;
       color: #a6e3a1;
       padding: 15px;
       border-radius: 8px 8px 0 0;
-      height: 350px;
+      height: 380px;
       overflow-y: auto;
       white-space: pre-wrap;
       border: 1px solid #313244;
+      font-size: 0.9rem;
+      line-height: 1.4;
     }
-    .input-container {
+
+    .console-input-container {
       display: flex;
       border: 1px solid #313244;
       border-top: none;
       border-radius: 0 0 8px 8px;
+      overflow: hidden;
     }
+
     #command-input {
       flex: 1;
-      background: #1e1e2e;
+      background-color: #181825;
       border: none;
-      color: #fff;
-      padding: 12px;
-      font-family: monospace;
+      color: #cdd6f4;
+      padding: 12px 15px;
+      font-family: 'Courier New', Courier, monospace;
       outline: none;
     }
+
     #send-btn {
-      background: #89b4fa;
+      background-color: #89b4fa;
       color: #11111b;
       border: none;
       padding: 0 20px;
       font-weight: bold;
       cursor: pointer;
     }
-    #send-btn:hover { background: #b4befe; }
+
+    #send-btn:hover:not(:disabled) { background-color: #b4befe; }
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
-  <h2>Console en Direct</h2>
-  
-  <div id="console">Connexion à la console...</div>
-  
-  <!-- Zone d'envoi de commande -->
-  <div class="input-container">
-    <input type="text" id="command-input" placeholder="Tape une commande (ex: op Joueur, say Bonjour)..." disabled />
-    <button id="send-btn" onclick="sendCommand()" disabled>Envoyer</button>
+  <div class="dashboard-container">
+    <header>
+      <h1>Tableau de bord Serveur</h1>
+    </header>
+
+    <!-- Carte de contrôle du serveur -->
+    <section class="card">
+      <div class="server-info">
+        <div>
+          <h2 id="server-name">Mon Serveur Minecraft</h2>
+          <p style="color: #a6adc8; margin-top: 5px;">
+            Statut : <span id="status-badge" class="status-badge">Chargement...</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-start" onclick="sendPowerSignal('start')">Démarrer</button>
+        <button class="btn btn-restart" onclick="sendPowerSignal('restart')">Redémarrer</button>
+        <button class="btn btn-stop" onclick="sendPowerSignal('stop')">Arrêter</button>
+      </div>
+    </section>
+
+    <!-- Section Console -->
+    <section class="console-section">
+      <h2>Console en Direct</h2>
+      <div id="console-output">Connexion à la console en cours...</div>
+      
+      <div class="console-input-container">
+        <input type="text" id="command-input" placeholder="Tapez une commande Minecraft (ex: list, op Joueur)..." disabled />
+        <button id="send-btn" onclick="sendCommand()" disabled>Envoyer</button>
+      </div>
+    </section>
   </div>
 
   <script>
+    // Configuration : Identifiant court de ton serveur
     const SERVER_ID = 'TON_SERVER_ID_ICI';
-    const consoleElem = document.getElementById('console');
+    const API_BASE_URL = 'http://localhost:3000/api/servers';
+
+    const consoleElem = document.getElementById('console-output');
     const inputElem = document.getElementById('command-input');
-    const btnElem = document.getElementById('send-btn');
+    const sendBtnElem = document.getElementById('send-btn');
+    const statusBadgeElem = document.getElementById('status-badge');
 
-    let ws = null; // Variable globale pour garder la connexion active
+    let ws = null;
 
+    // 1. Envoyer des ordres de puissance (Start / Stop / Restart)
+    async function sendPowerSignal(action) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${SERVER_ID}/power`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signal: action })
+        });
+
+        if (response.ok) {
+          consoleElem.innerText += `\n[ACTION] Signal '${action}' envoyé avec succès.`;
+        } else {
+          consoleElem.innerText += `\n[ERREUR] Échec de l'envoi du signal '${action}'.`;
+        }
+      } catch (err) {
+        consoleElem.innerText += `\n[ERREUR] Connexion impossible au serveur backend local.`;
+      }
+    }
+
+    // 2. Initialiser la connexion WebSocket pour la console
     async function initConsole() {
       try {
-        const res = await fetch(`http://localhost:3000/api/servers/${SERVER_ID}/websockets`);
+        const res = await fetch(`${API_BASE_URL}/${SERVER_ID}/websockets`);
         const { token, socket } = await res.json();
 
         ws = new WebSocket(socket);
 
         ws.onopen = () => {
-          consoleElem.innerText = "Connecté à la console !\n";
+          consoleElem.innerText = "[CONSOLE] Connexion établie avec le serveur !\n";
           
-          // Authentification auprès de Pterodactyl
+          // Authentification
           ws.send(JSON.stringify({
             event: 'auth',
             args: [token]
           }));
 
-          // Active les champs de saisie une fois la connexion établie
+          // Activation de la zone de saisie
           inputElem.disabled = false;
-          btnElem.disabled = false;
+          sendBtnElem.disabled = false;
+          
+          updateStatus('running');
         };
 
         ws.onmessage = (event) => {
@@ -87,44 +242,59 @@
 
           if (data.event === 'console output') {
             consoleElem.innerText += data.args[0] + '\n';
-            consoleElem.scrollTop = consoleElem.scrollHeight;
+            consoleElem.scrollTop = consoleElem.scrollHeight; // Défilement automatique
+          } else if (data.event === 'status') {
+            updateStatus(data.args[0]);
           }
         };
 
         ws.onclose = () => {
-          consoleElem.innerText += "\n[Connexion fermée]";
+          consoleElem.innerText += "\n[CONSOLE] Connexion fermée.";
           inputElem.disabled = true;
-          btnElem.disabled = true;
+          sendBtnElem.disabled = true;
+          updateStatus('offline');
         };
 
       } catch (err) {
-        consoleElem.innerText = "Impossible de charger la console.";
+        consoleElem.innerText = "[CONSOLE] Impossible de récupérer les accès WebSocket.";
+        updateStatus('offline');
       }
     }
 
-    // Fonction pour envoyer la commande
+    // 3. Envoyer une commande à la console
     function sendCommand() {
       const command = inputElem.value.trim();
 
       if (command !== '' && ws && ws.readyState === WebSocket.OPEN) {
-        // Envoi de l'événement Pterodactyl 'send command'
         ws.send(JSON.stringify({
           event: 'send command',
           args: [command]
         }));
-
-        // Effacer le champ texte après envoi
         inputElem.value = '';
       }
     }
 
-    // Permet d'envoyer la commande en appuyant sur la touche 'Entrée'
+    // Permet d'envoyer la commande avec la touche 'Entrée'
     inputElem.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendCommand();
-      }
+      if (e.key === 'Enter') sendCommand();
     });
 
+    // 4. Mettre à jour l'affichage du statut
+    function updateStatus(state) {
+      statusBadgeElem.className = 'status-badge';
+      if (state === 'running') {
+        statusBadgeElem.innerText = 'En ligne';
+        statusBadgeElem.classList.add('status-online');
+      } else if (state === 'starting') {
+        statusBadgeElem.innerText = 'Démarrage...';
+        statusBadgeElem.classList.add('status-starting');
+      } else {
+        statusBadgeElem.innerText = 'Hors ligne';
+        statusBadgeElem.classList.add('status-offline');
+      }
+    }
+
+    // Lancement au chargement de la page
     initConsole();
   </script>
 </body>
