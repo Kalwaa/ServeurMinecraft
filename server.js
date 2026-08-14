@@ -53,6 +53,17 @@ app.post('/api/servers/:identifier/power', async (req, res) => {
   }
 });
 
+// Route pour obtenir le jeton et l'URL du WebSocket
+app.get('/api/servers/:identifier/websockets', async (req, res) => {
+  try {
+    const response = await api.get(`/servers/${req.params.identifier}/websockets`);
+    // Pterodactyl renvoie { data: { token: "...", socket: "wss://..." } }
+    res.json(response.data.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des détails WebSocket' });
+  }
+});
+
 app.listen(3000, () => {
   console.log('Serveur démarré sur http://localhost:3000');
 });
