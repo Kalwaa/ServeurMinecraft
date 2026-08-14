@@ -37,6 +37,22 @@ app.get('/api/servers/:identifier/resources', async (req, res) => {
   }
 });
 
+// Route 3 : Envoyer un signal de puissance (start / stop / restart)
+app.post('/api/servers/:identifier/power', async (req, res) => {
+  const { signal } = req.body; // 'start', 'stop', 'restart', 'kill'
+
+  try {
+    const response = await api.post(`/servers/${req.params.identifier}/power`, {
+      signal: signal
+    });
+    // Pterodactyl renvoie généralement un statut 204 (Pas de contenu) en cas de succès
+    res.json({ success: true, message: `Signal '${signal}' envoyé avec succès !` });
+  } catch (error) {
+    console.error('Erreur API Pterodactyl:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Erreur lors de l'envoi de la commande de puissance' });
+  }
+});
+
 app.listen(3000, () => {
   console.log('Serveur démarré sur http://localhost:3000');
 });
