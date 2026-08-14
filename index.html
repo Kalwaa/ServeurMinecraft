@@ -5,35 +5,60 @@
   <title>Mon Dashboard Minecraft</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; padding: 20px; }
-    .card { background: #2b2b3b; padding: 15px; border-radius: 8px; max-width: 400px; }
-    .status { font-weight: bold; color: #4caf50; }
+    .card { background: #2b2b3b; padding: 20px; border-radius: 8px; max-width: 400px; }
+    .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+    .btn-start { background-color: #4caf50; color: white; }
+    .btn-stop { background-color: #f44336; color: white; }
+    .btn-restart { background-color: #ff9800; color: white; }
   </style>
 </head>
 <body>
 
   <h1>Tableau de bord Serveur</h1>
   <div class="card">
-    <h2 id="server-name">Chargement...</h2>
-    <p>Statut : <span id="server-status" class="status">-</span></p>
-    <p>RAM : <span id="server-ram">-</span></p>
+    <h2 id="server-name">Mon Serveur</h2>
+    
+    <!-- Boutons d'action -->
+    <div style="margin-top: 20px;">
+      <button class="btn btn-start" onclick="sendPowerSignal('start')">Démarrer</button>
+      <button class="btn btn-stop" onclick="sendPowerSignal('stop')">Arrêter</button>
+      <button class="btn btn-restart" onclick="sendPowerSignal('restart')">Redémarrer</button>
+    </div>
+
+    <p id="response-message" style="margin-top: 15px; font-size: 0.9em;"></p>
   </div>
 
   <script>
-    async function fetchServerData() {
+    // Remplace par l'ID court de ton serveur Pterodactyl (ex: "a1b2c3d4")
+    const SERVER_ID = 'TON_SERVER_ID_ICI';
+
+    async function sendPowerSignal(action) {
+      const messageElem = document.getElementById('response-message');
+      messageElem.innerText = `Envoi de la commande (${action})...`;
+
       try {
-        // Appelle ton propre backend (pas l'API FalixNodes directement)
-        const response = await fetch('http://localhost:3000/api/servers');
+        const response = await fetch(`http://localhost:3000/api/servers/${SERVER_ID}/power`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ signal: action })
+        });
+
         const data = await response.json();
-        
-        const server = data.data[0].attributes;
-        document.getElementById('server-name').innerText = server.name;
-        document.getElementById('server-status').innerText = server.status || 'En ligne';
+
+        if (response.ok) {
+          messageElem.innerText = `Succès : Serveur en cours de ${action} !`;
+          messageElem.style.color = '#4caf50';
+        } else {
+          messageElem.innerText = `Erreur : ${data.error}`;
+          messageElem.style.color = '#f44336';
+        }
       } catch (err) {
-        console.error('Impossible de charger les données:', err);
+        messageElem.innerText = 'Erreur de connexion au serveur local.';
+        messageElem.style.color = '#f44336';
       }
     }
-
-    fetchServerData();
   </script>
 </body>
 </html>
