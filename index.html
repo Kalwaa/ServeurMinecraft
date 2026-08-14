@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mon Dashboard Minecraft</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; padding: 20px; }
+    .card { background: #2b2b3b; padding: 15px; border-radius: 8px; max-width: 400px; }
+    .status { font-weight: bold; color: #4caf50; }
+  </style>
+</head>
+<body>
+
+  <h1>Tableau de bord Serveur</h1>
+  <div class="card">
+    <h2 id="server-name">Chargement...</h2>
+    <p>Statut : <span id="server-status" class="status">-</span></p>
+    <p>RAM : <span id="server-ram">-</span></p>
+  </div>
+
+  <script>
+    async function fetchServerData() {
+      try {
+        // Appelle ton propre backend (pas l'API FalixNodes directement)
+        const response = await fetch('http://localhost:3000/api/servers');
+        const data = await response.json();
+        
+        const server = data.data[0].attributes;
+        document.getElementById('server-name').innerText = server.name;
+        document.getElementById('server-status').innerText = server.status || 'En ligne';
+      } catch (err) {
+        console.error('Impossible de charger les données:', err);
+      }
+    }
+
+    fetchServerData();
+  </script>
+</body>
+</html>
