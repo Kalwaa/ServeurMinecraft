@@ -2,63 +2,72 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Mon Dashboard Minecraft</title>
+  <title>Console Pterodactyl</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; padding: 20px; }
-    .card { background: #2b2b3b; padding: 20px; border-radius: 8px; max-width: 400px; }
-    .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-    .btn-start { background-color: #4caf50; color: white; }
-    .btn-stop { background-color: #f44336; color: white; }
-    .btn-restart { background-color: #ff9800; color: white; }
+    body { font-family: monospace; background: #181825; color: #cdd6f4; padding: 20px; }
+    #console {
+      background: #11111b;
+      color: #a6e3a1;
+      padding: 15px;
+      border-radius: 8px;
+      height: 350px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      border: 1px solid #313244;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Tableau de bord Serveur</h1>
-  <div class="card">
-    <h2 id="server-name">Mon Serveur</h2>
-    
-    <!-- Boutons d'action -->
-    <div style="margin-top: 20px;">
-      <button class="btn btn-start" onclick="sendPowerSignal('start')">Démarrer</button>
-      <button class="btn btn-stop" onclick="sendPowerSignal('stop')">Arrêter</button>
-      <button class="btn btn-restart" onclick="sendPowerSignal('restart')">Redémarrer</button>
-    </div>
-
-    <p id="response-message" style="margin-top: 15px; font-size: 0.9em;"></p>
-  </div>
+  <h2>Console en Direct</h2>
+  <div id="console">Connexion à la console...</div>
 
   <script>
-    // Remplace par l'ID court de ton serveur Pterodactyl (ex: "a1b2c3d4")
     const SERVER_ID = 'TON_SERVER_ID_ICI';
+    const consoleElem = document.getElementById('console');
 
-    async function sendPowerSignal(action) {
-      const messageElem = document.getElementById('response-message');
-      messageElem.innerText = `Envoi de la commande (${action})...`;
-
+    async function initConsole() {
       try {
-        const response = await fetch(`http://localhost:3000/api/servers/${SERVER_ID}/power`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ signal: action })
-        });
+        // 1. Demander le jeton WebSocket à ton backend
+        const res = await fetch(`http://localhost:3000/api/servers/${SERVER_ID}/websockets`);
+        const { token, socket } = await res.json();
 
-        const data = await response.json();
+        // 2. Ouvrir la connexion WebSocket directe vers Pterodactyl
+        const ws = new WebSocket(socket);
 
-        if (response.ok) {
-          messageElem.innerText = `Succès : Serveur en cours de ${action} !`;
-          messageElem.style.color = '#4caf50';
-        } else {
-          messageElem.innerText = `Erreur : ${data.error}`;
-          messageElem.style.color = '#f44336';
-        }
+        ws.onopen = () => {
+          consoleElem.innerText = "Connecté à la console !\n";
+          // S'authentifier auprès du WebSocket avec le jeton
+          ws.send(JSON.stringify({
+            event: 'auth',
+            args: [token]
+          }));
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+
+          // L'événement 'console output' contient les lignes de logs du serveur
+          if (data.event === 'console output') {
+            consoleElem.innerText += data.args[0] + '\n';
+            consoleElem.scrollTop = consoleElem.scrollHeight; // Défilement automatique vers le bas
+          }
+        };
+
+        ws.onerror = (err) => {
+          consoleElem.innerText += "\n[Erreur WebSocket]";
+        };
+
+        ws.onclose = () => {
+          consoleElem.innerText += "\n[Connexion fermée]";
+        };
+
       } catch (err) {
-        messageElem.innerText = 'Erreur de connexion au serveur local.';
-        messageElem.style.color = '#f44336';
+        consoleElem.innerText = "Impossible de charger la console.";
       }
     }
+
+    initConsole();
   </script>
 </body>
 </html>
