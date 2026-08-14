@@ -2,70 +2,128 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Console Pterodactyl</title>
+  <title>Console & Commandes Pterodactyl</title>
   <style>
     body { font-family: monospace; background: #181825; color: #cdd6f4; padding: 20px; }
     #console {
       background: #11111b;
       color: #a6e3a1;
       padding: 15px;
-      border-radius: 8px;
+      border-radius: 8px 8px 0 0;
       height: 350px;
       overflow-y: auto;
       white-space: pre-wrap;
       border: 1px solid #313244;
     }
+    .input-container {
+      display: flex;
+      border: 1px solid #313244;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    #command-input {
+      flex: 1;
+      background: #1e1e2e;
+      border: none;
+      color: #fff;
+      padding: 12px;
+      font-family: monospace;
+      outline: none;
+    }
+    #send-btn {
+      background: #89b4fa;
+      color: #11111b;
+      border: none;
+      padding: 0 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #send-btn:hover { background: #b4befe; }
   </style>
 </head>
 <body>
 
   <h2>Console en Direct</h2>
+  
   <div id="console">Connexion à la console...</div>
+  
+  <!-- Zone d'envoi de commande -->
+  <div class="input-container">
+    <input type="text" id="command-input" placeholder="Tape une commande (ex: op Joueur, say Bonjour)..." disabled />
+    <button id="send-btn" onclick="sendCommand()" disabled>Envoyer</button>
+  </div>
 
   <script>
     const SERVER_ID = 'TON_SERVER_ID_ICI';
     const consoleElem = document.getElementById('console');
+    const inputElem = document.getElementById('command-input');
+    const btnElem = document.getElementById('send-btn');
+
+    let ws = null; // Variable globale pour garder la connexion active
 
     async function initConsole() {
       try {
-        // 1. Demander le jeton WebSocket à ton backend
         const res = await fetch(`http://localhost:3000/api/servers/${SERVER_ID}/websockets`);
         const { token, socket } = await res.json();
 
-        // 2. Ouvrir la connexion WebSocket directe vers Pterodactyl
-        const ws = new WebSocket(socket);
+        ws = new WebSocket(socket);
 
         ws.onopen = () => {
           consoleElem.innerText = "Connecté à la console !\n";
-          // S'authentifier auprès du WebSocket avec le jeton
+          
+          // Authentification auprès de Pterodactyl
           ws.send(JSON.stringify({
             event: 'auth',
             args: [token]
           }));
+
+          // Active les champs de saisie une fois la connexion établie
+          inputElem.disabled = false;
+          btnElem.disabled = false;
         };
 
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
 
-          // L'événement 'console output' contient les lignes de logs du serveur
           if (data.event === 'console output') {
             consoleElem.innerText += data.args[0] + '\n';
-            consoleElem.scrollTop = consoleElem.scrollHeight; // Défilement automatique vers le bas
+            consoleElem.scrollTop = consoleElem.scrollHeight;
           }
-        };
-
-        ws.onerror = (err) => {
-          consoleElem.innerText += "\n[Erreur WebSocket]";
         };
 
         ws.onclose = () => {
           consoleElem.innerText += "\n[Connexion fermée]";
+          inputElem.disabled = true;
+          btnElem.disabled = true;
         };
 
       } catch (err) {
         consoleElem.innerText = "Impossible de charger la console.";
       }
     }
+
+    // Fonction pour envoyer la commande
+    function sendCommand() {
+      const command = inputElem.value.trim();
+
+      if (command !== '' && ws && ws.readyState === WebSocket.OPEN) {
+        // Envoi de l'événement Pterodactyl 'send command'
+        ws.send(JSON.stringify({
+          event: 'send command',
+          args: [command]
+        }));
+
+        // Effacer le champ texte après envoi
+        inputElem.value = '';
+      }
+    }
+
+    // Permet d'envoyer la commande en appuyant sur la touche 'Entrée'
+    inputElem.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendCommand();
+      }
+    });
 
     initConsole();
   </script>
